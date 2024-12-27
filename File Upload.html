@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload using JavaScript</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #6990f2;
+        }
+
+        .wrapper {
+            width: 430px;
+            padding: 30px;
+            background: #fff;
+            border-radius: 5px;
+        }
+
+        .wrapper header {
+            color: #6990f2;
+            font-size: 27px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .wrapper form {
+            height: 167px;
+            display: flex;
+            margin: 30px 0;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            border-radius: 5px;
+            border: 2px dashed #6990f2;
+        }
+
+        form :where(i, p) {
+            color: #6990f2;
+        }
+
+        form i {
+            font-size: 50px;
+        }
+
+        form p {
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        section .row {
+            background: #e9f0ff;
+            margin-bottom: 10px;
+            list-style: none;
+            padding: 15px 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        section .row {
+            font-size: 30px;
+            color: #6990f2;
+        }
+
+        section .row .content {
+            width: 100%;
+            margin-left: 15px;
+        }
+
+        section .details span {
+            font-size: 14px;
+        }
+
+        .progress-area .row .content {
+            width: 100%;
+            margin-left: 15px;
+        }
+
+        .progress-area .details {
+            display: flex;
+            align-items: center;
+            margin-bottom: 7px;
+            justify-content: space-between;
+        }
+
+        .progress-area .progress-bar {
+            height: 6px;
+            width: 100%;
+            background: #fff;
+            margin-bottom: 4px;
+            border-radius: 30px;
+        }
+
+        .progress-bar .progress {
+            height: 100%;
+            width: 0%;
+            background: #6990f2;
+            border-radius: inherit;
+        }
+
+        .uploaded-area {
+            max-height: 150px;
+            overflow-y: scroll;
+        }
+
+        .uploaded-area::-webkit-scrollbar {
+            width: 0px;
+        }
+
+        .uploaded-area .row .content {
+            display: flex;
+            align-items: center;
+        }
+
+        .uploaded-area .row .details {
+            display: flex;
+            margin-left: 15px;
+            flex-direction: column;
+        }
+
+        .uploaded-area .details .size {
+            font-size: 11px;
+            color: #404040;
+        }
+
+        .uploaded-area .fa-check {
+            color: #6990f2;
+            font-size: 16px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <header>File Uploader JavaScript</header>
+        <form action="#">
+            <input type="file" class="file-input" name="file" hidden>
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Browse File to Upload</p>
+        </form>
+
+        <section class="progress-area">
+         
+        </section>
+
+        <section class="uploaded-area">
+         
+        </section>
+    </div>
+
+    <script>
+        const form = document.querySelector("form"),
+              fileInput = form.querySelector(".file-input"),
+              progressArea = document.querySelector(".progress-area"),
+              uploadedArea = document.querySelector(".uploaded-area");
+
+        form.addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        fileInput.onchange = ({ target }) => {
+            let file = target.files[0];
+            if (file) {
+                let fileName = file.name;
+                uploadFile(file);
+            }
+        };
+
+        function uploadFile(file) {
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "php/upload.php", true);
+
+            xhr.upload.addEventListener("progress", ({ loaded, total }) => {
+                let fileLoaded = Math.floor((loaded / total) * 100);
+                let fileTotal = Math.floor(total / 1000); 
+
+                updateProgress(file.name, fileLoaded, fileTotal);
+            });
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    showUploadedFile(file.name, xhr.responseText);
+                }
+            };
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+            xhr.send(formData);
+        }
+
+        function updateProgress(fileName, fileLoaded, fileTotal) {
+            let progressHTML = `
+                <li class="row" id="progress-${fileName}">
+                    <i class="fas fa-file-alt"></i>
+                    <div class="content">
+                        <div class="details">
+                            <span class="name">${fileName} . Uploading</span>
+                            <span class="percent">${fileLoaded}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: ${fileLoaded}%"></div>
+                        </div>
+                    </div>
+                </li>
+            `;
+            progressArea.innerHTML = progressHTML;
+        }
+
+        function showUploadedFile(fileName, responseText) {
+            let uploadedHTML = `
+                <li class="row">
+                    <div class="content">
+                        <i class="fas fa-file-alt"></i>
+                        <div class="details">
+                            <span class="name">${fileName} . Uploaded</span>
+                            <span class="size">${formatSize(responseText)}</span>
+                        </div>
+                    </div>
+                </li>
+            `;
+            uploadedArea.innerHTML = uploadedHTML;
+
+            progressArea.innerHTML = '';
+        }
+        function formatSize(sizeInBytes) {
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            if (sizeInBytes === 0) return '0 Byte';
+            const i = parseInt(Math.floor(Math.log(sizeInBytes) / Math.log(1024)));
+            return Math.round(sizeInBytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+        }
+    </script>
+
+</body>
+</html>
